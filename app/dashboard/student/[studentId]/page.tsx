@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { butterbase } from "@/lib/butterbase";
+import { MemoryGraph } from "./MemoryGraph";
+import type { GraphNode } from "./MemoryGraph";
 
 export default async function StudentDetailPage({ params }: { params: Promise<{ studentId: string }> }) {
   const { studentId } = await params;
@@ -10,6 +12,37 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
   const state   = detail.learning_state;
   const status  = state?.status ?? "on_track";
   const initials = detail.student.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  // Build memory graph nodes from XTrace-derived learning state
+  const graphNodes: GraphNode[] = [];
+  const seen = new Set<string>();
+  function addNode(label: string, type: GraphNode["type"]) {
+    const key = label.toLowerCase().trim();
+    if (!key || seen.has(key)) {
+      if (seen.has(key)) {
+        const existing = graphNodes.find(n => n.label.toLowerCase().trim() === key);
+        if (existing) existing.count++;
+      }
+      return;
+    }
+    seen.add(key);
+    graphNodes.push({ id: key, label: label.trim(), type, count: 1 });
+  }
+  for (const t of state?.strong_topics ?? []) addNode(t, "strong");
+  for (const t of state?.weak_topics ?? [])   addNode(t, "weak");
+  // Misconceptions: use first ~2 words as label so graph isn't cluttered
+  for (const m of state?.misconceptions ?? []) {
+    const shortLabel = m.split(/\s+/).slice(0, 3).join(" ");
+    addNode(shortLabel, "misconception");
+  }
+  // Add improving topics from learning events
+  for (const e of detail.learning_events) {
+    if (e.event_type === "improvement") addNode(e.topic, "improving");
+    else if (e.event_type === "mastery") addNode(e.topic, "strong");
+    else if (e.event_type === "confusion") addNode(e.topic, "weak");
+    else if (e.event_type === "advanced_question") addNode(e.topic, "strong");
+  }
+  const totalMessages = detail.recent_messages.length;
 
   return (
     <main className="page">
@@ -103,6 +136,11 @@ export default async function StudentDetailPage({ params }: { params: Promise<{ 
           <span className="action-card-label">Recommended action</span>
           <p>{recommendAction(state?.status, state?.weak_topics ?? [], state?.misconceptions ?? [])}</p>
         </div>
+      </div>
+
+      {/* ── XTrace Memory Graph ── */}
+      <div style={{ marginBottom: 20 }}>
+        <MemoryGraph nodes={graphNodes} studentName={detail.student.name} totalMessages={totalMessages} />
       </div>
 
       {/* ── Evidence ── */}

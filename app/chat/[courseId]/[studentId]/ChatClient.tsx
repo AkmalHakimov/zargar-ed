@@ -3,6 +3,53 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import type { ChatMessage, StudentLearningState } from "@/lib/types";
 
+function Markdown({ text }: { text: string }) {
+  const paragraphs = text.split(/\n{2,}/);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {paragraphs.map((block, i) => {
+        // Bullet list block
+        if (block.trim().match(/^[-*]\s/m)) {
+          const items = block.split("\n").filter(l => l.trim());
+          return (
+            <ul key={i} style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+              {items.map((item, j) => (
+                <li key={j}>{inlineFormat(item.replace(/^[-*]\s+/, ""))}</li>
+              ))}
+            </ul>
+          );
+        }
+        // Numbered list
+        if (block.trim().match(/^\d+\.\s/m)) {
+          const items = block.split("\n").filter(l => l.trim());
+          return (
+            <ol key={i} style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>
+              {items.map((item, j) => (
+                <li key={j}>{inlineFormat(item.replace(/^\d+\.\s+/, ""))}</li>
+              ))}
+            </ol>
+          );
+        }
+        return <p key={i} style={{ margin: 0 }}>{inlineFormat(block)}</p>;
+      })}
+    </div>
+  );
+}
+
+function inlineFormat(text: string): React.ReactNode[] {
+  // Handle **bold**, *italic*, `code`
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**"))
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    if (part.startsWith("*") && part.endsWith("*"))
+      return <em key={i}>{part.slice(1, -1)}</em>;
+    if (part.startsWith("`") && part.endsWith("`"))
+      return <code key={i} style={{ background: "rgba(0,0,0,.07)", borderRadius: 3, padding: "1px 5px", fontFamily: "monospace", fontSize: "0.9em" }}>{part.slice(1, -1)}</code>;
+    return part;
+  });
+}
+
 export function ChatClient({
   courseId,
   studentId,
@@ -108,7 +155,7 @@ export function ChatClient({
           )}
           {messages.map((msg) => (
             <div key={msg.id} className={`bubble ${msg.role}`}>
-              {msg.content}
+              {msg.role === "tutor" ? <Markdown text={msg.content} /> : msg.content}
             </div>
           ))}
           {loading && (
@@ -125,7 +172,6 @@ export function ChatClient({
               <textarea
                 className="input textarea"
                 name="message"
-                required
                 placeholder="Ask about a concept, request an explanation, or test your understanding…"
                 style={{ minHeight: 48, maxHeight: 120, resize: "none", flex: 1 }}
                 onKeyDown={(e) => {

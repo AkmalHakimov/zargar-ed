@@ -3,21 +3,34 @@
 import { FormEvent, useState } from "react";
 
 export function NewCourseForm() {
-  const [inviteLink, setInviteLink] = useState("");
-  const [loading, setLoading]       = useState(false);
-  const [copied, setCopied]         = useState(false);
-  const [files, setFiles]           = useState<File[]>([]);
-  const [error, setError]           = useState("");
+  const [inviteLink, setInviteLink]       = useState("");
+  const [loading, setLoading]             = useState(false);
+  const [copied, setCopied]               = useState(false);
+  const [files, setFiles]                 = useState<File[]>([]);
+  const [savedFileCount, setSavedFileCount] = useState(0);
+  const [hasSavedMaterial, setHasSavedMaterial] = useState(false);
+  const [error, setError]                 = useState("");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setLoading(true);
     const form = new FormData(event.currentTarget);
-    if (!String(form.get("material") ?? "").trim() && files.length === 0) {
+    const material = String(form.get("material") ?? "").trim();
+    if (!material && files.length === 0) {
       setError("Add at least one material file or paste course material.");
       setLoading(false);
       return;
+    }
+
+    const pendingFileCount = files.length;
+    const pendingMaterial = !!material;
+
+    // Explicitly append files from React state so they're always included,
+    // regardless of browser/DOM quirks with sr-only file inputs inside nested labels.
+    form.delete("files");
+    for (const file of files) {
+      form.append("files", file);
     }
 
     const response = await fetch("/api/courses", {
@@ -30,6 +43,8 @@ export function NewCourseForm() {
       setLoading(false);
       return;
     }
+    setSavedFileCount(pendingFileCount);
+    setHasSavedMaterial(pendingMaterial);
     setInviteLink(`${window.location.origin}${data.inviteLink}`);
     setLoading(false);
   }
@@ -114,7 +129,15 @@ export function NewCourseForm() {
       {inviteLink && (
         <div className="invite-card" style={{ marginTop: 8 }}>
           <div>
-            <div className="invite-card-label">Class invite link — ready to share</div>
+            <div className="invite-card-label">Course created — invite link ready</div>
+            {(savedFileCount > 0 || hasSavedMaterial) && (
+              <p style={{ fontSize: 13, color: "var(--brand)", marginTop: 4, marginBottom: 2, fontWeight: 600 }}>
+                ✓{savedFileCount > 0 ? ` ${savedFileCount} file${savedFileCount !== 1 ? "s" : ""} uploaded` : ""}
+                {savedFileCount > 0 && hasSavedMaterial ? " + " : ""}
+                {hasSavedMaterial ? "pasted material saved" : ""}
+                {" "}as course resources
+              </p>
+            )}
             <p style={{ fontSize: 13, color: "var(--muted)", marginTop: 2 }}>
               Share this with your students. Anyone with the link can join and begin studying.
             </p>

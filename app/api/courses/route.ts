@@ -104,9 +104,14 @@ function fileExtension(filename: string) {
 
 async function extractFileText(file: File) {
   if (file.type === "application/pdf" || fileExtension(file.name) === "pdf") {
-    const pdfParse = (await import("pdf-parse")).default;
-    const data = await pdfParse(Buffer.from(await file.arrayBuffer()));
-    return data.text;
+    const { PDFParse } = await import("pdf-parse");
+    const parser = new PDFParse({ data: Buffer.from(await file.arrayBuffer()) });
+    try {
+      const data = await parser.getText();
+      return data.text;
+    } finally {
+      await parser.destroy();
+    }
   }
 
   return file.text();
