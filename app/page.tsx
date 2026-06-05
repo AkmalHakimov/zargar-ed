@@ -134,7 +134,7 @@ export default function LandingPage() {
               { n: "01", title: "Paste your materials", body: "Drop in lecture notes, readings, or a rubric. Zargar uses only what you give it." },
               { n: "02", title: "Share one link",        body: "Students join your course with a URL. Name and email — that\u2019s it." },
               { n: "03", title: "They study, it listens", body: "Every question a student asks reveals something. Zargar tracks it all." },
-              { n: "04", title: "Memory accumulates",    body: "XTrace builds a persistent profile of each student\u2019s misconceptions and growth." },
+              { n: "04", title: "Memory accumulates",    body: "Zargar builds a persistent profile of each student\u2019s misconceptions and progress across sessions." },
               { n: "05", title: "You act early",         body: "Your dashboard shows who needs attention today — before the exam tells you." }
             ].map((step) => (
               <div className="how-step" key={step.n}>
@@ -171,21 +171,21 @@ export default function LandingPage() {
               href="/chat/course_ai101/student_maya"
               style={{ fontSize: 13.5, color: "rgba(255,255,255,.5)", textAlign: "center", display: "block", padding: "6px 0" }}
             >
-              or try the live demo
+              or explore a sample course
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── Footer note ── */}
+      {/* ── Footer ── */}
       <div style={{ background: "#FAF8F2", borderTop: "1px solid var(--line)", padding: "20px clamp(24px,6vw,80px)", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
         <span style={{ fontSize: 12.5, color: "var(--muted)" }}>
-          Zargar · Built with RocketRide, XTrace, Butterbase & Photon
+          &copy; 2026 Zargar
         </span>
         <div style={{ display: "flex", gap: 24 }}>
           <Link href="/dashboard" style={{ fontSize: 12.5, color: "var(--muted)" }}>Professor dashboard</Link>
           <Link href="/courses/new" style={{ fontSize: 12.5, color: "var(--muted)" }}>Create course</Link>
-          <Link href="/chat/course_ai101/student_maya" style={{ fontSize: 12.5, color: "var(--muted)" }}>Live demo</Link>
+          <Link href="/chat/course_ai101/student_maya" style={{ fontSize: 12.5, color: "var(--muted)" }}>Sample course</Link>
         </div>
       </div>
 
