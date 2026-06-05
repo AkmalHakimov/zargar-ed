@@ -18,10 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               Zargar
             </Link>
             <nav className="nav">
-              <Link href="/dashboard">Dashboard</Link>
-              <Link href="/courses/new">Courses</Link>
-              <Link href="/join/course_ai101">Student view</Link>
-              <Link href="/chat/course_ai101/student_maya">Student chat</Link>
+              <Link href="/dashboard">Professor dashboard</Link>
               <Link className="nav-cta" href="/courses/new">
                 Create course
               </Link>

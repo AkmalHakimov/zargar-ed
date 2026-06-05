@@ -49,7 +49,7 @@ export function JoinForm({ courseId }: { courseId: string }) {
       </label>
 
       <button className="button button-lg" disabled={loading} style={{ marginTop: 4 }}>
-        {loading ? "Joining\u2026" : "Start study chat \u2192"}
+        {loading ? "Joining\u2026" : "Open student dashboard \u2192"}
       </button>
     </form>
   );

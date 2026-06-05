@@ -1,4 +1,4 @@
-export type Platform = "web" | "photon" | "slack" | "telegram";
+export type Platform = "web" | "photon" | "slack" | "telegram" | "imessage" | "whatsapp" | "terminal";
 export type ChatRole = "student" | "tutor";
 export type LearningStatus = "behind" | "on_track" | "ahead" | "improving" | "inactive";
 export type LearningEventType =
@@ -91,4 +91,3 @@ export interface CourseAnalytics {
   topMisconceptions: string[];
   lastActivity: string;
 }
-

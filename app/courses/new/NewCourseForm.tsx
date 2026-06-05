@@ -6,21 +6,30 @@ export function NewCourseForm() {
   const [inviteLink, setInviteLink] = useState("");
   const [loading, setLoading]       = useState(false);
   const [copied, setCopied]         = useState(false);
+  const [files, setFiles]           = useState<File[]>([]);
+  const [error, setError]           = useState("");
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setError("");
     setLoading(true);
     const form = new FormData(event.currentTarget);
+    if (!String(form.get("material") ?? "").trim() && files.length === 0) {
+      setError("Add at least one material file or paste course material.");
+      setLoading(false);
+      return;
+    }
+
     const response = await fetch("/api/courses", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: form.get("title"),
-        description: form.get("description"),
-        material: form.get("material")
-      })
+      body: form
     });
     const data = await response.json();
+    if (!response.ok) {
+      setError(data.error ?? "Could not create the course.");
+      setLoading(false);
+      return;
+    }
     setInviteLink(`${window.location.origin}${data.inviteLink}`);
     setLoading(false);
   }
@@ -56,23 +65,47 @@ export function NewCourseForm() {
       <label className="field">
         <span className="field-label">Course material</span>
         <span className="field-hint">
-          Paste notes, readings, rubrics, or a study guide. This becomes the source of truth for all AI responses.
+          Upload files, paste notes, or do both. These resources become the source of truth for student AI chat.
         </span>
+        <label className="upload-card material-upload-card">
+          <input
+            className="sr-only"
+            name="files"
+            type="file"
+            multiple
+            accept=".pdf,.txt,.md,.mdx,.csv,.json,.html,.xml,.yaml,.yml,.js,.jsx,.ts,.tsx,.py,application/pdf,text/*,application/json,application/xml"
+            onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+          />
+          <div className="upload-icon">+</div>
+          <div className="upload-title">Upload material files</div>
+          <div className="upload-copy">PDF, text, Markdown, CSV, JSON, HTML, XML, YAML, and code files are supported.</div>
+        </label>
+        {files.length > 0 && (
+          <div className="file-list">
+            {files.map((file) => (
+              <div className="file-pill" key={`${file.name}-${file.size}`}>
+                <span>{file.name}</span>
+                <span>{formatBytes(file.size)}</span>
+              </div>
+            ))}
+          </div>
+        )}
         <textarea
           className="textarea"
           name="material"
-          required
           style={{ minHeight: 200 }}
-          placeholder={"Example:\n\nLogistic regression predicts probability using the sigmoid function. Unlike linear regression, it is used for classification tasks. The output is always between 0 and 1."}
+          placeholder={"Optional pasted material:\n\nLogistic regression predicts probability using the sigmoid function. Unlike linear regression, it is used for classification tasks. The output is always between 0 and 1."}
         />
       </label>
 
       <div className="source-card">
         <div className="source-card-title">Source material storage</div>
         <div style={{ fontSize: 13, color: "var(--muted)", lineHeight: 1.55 }}>
-          The pasted material is saved as a course resource and used by the tutor pipeline for grounded responses.
+          Each uploaded file is saved as a course resource and used by the tutor pipeline for grounded responses.
         </div>
       </div>
+
+      {error && <div className="form-error">{error}</div>}
 
       <button className="button button-lg" disabled={loading} style={{ marginTop: 4 }}>
         {loading ? "Creating course…" : "Create course & get invite link"}
@@ -96,4 +129,10 @@ export function NewCourseForm() {
       )}
     </form>
   );
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }

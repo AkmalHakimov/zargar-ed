@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import { processStudentMessage } from "@/lib/agent";
 import { parsePhotonWebhook, sendMessage } from "@/lib/photon";
 
+export const runtime = "nodejs";
+
 export async function POST(request: Request) {
   try {
-    const event = await parsePhotonWebhook(await request.json());
+    const event = await parsePhotonWebhook(await request.text(), request.headers);
     const result = await processStudentMessage({
       courseId: event.courseId,
       studentId: event.studentId,
@@ -22,4 +24,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: error instanceof Error ? error.message : "Unknown error" }, { status: 400 });
   }
 }
-

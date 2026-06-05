@@ -28,11 +28,11 @@ Stored entities:
 
 ### RocketRide
 
-`lib/rocketride.ts` models the student message workflow:
+`lib/rocketride.ts` runs the student message workflow:
 
 incoming student message -> detect course topic -> retrieve relevant course context -> read XTrace student memory -> generate grounded tutor response -> extract learning signals -> update XTrace memory -> update Butterbase progress records.
 
-The current implementation is API-compatible and includes TODOs where RocketRide SDK nodes should be connected.
+When RocketRide settings are present, the app starts `tutor.pipe` through the RocketRide TypeScript SDK and sends a chat `Question` containing the course context, recent history, and student memory. If RocketRide is not configured or the pipeline is unavailable, the same function falls back to the local Anthropic/heuristic tutor path.
 
 ### XTrace
 
@@ -51,11 +51,28 @@ The local version uses heuristics and `.data/xtrace-memory.json`; replace those 
 
 ### Photon / Spectrum
 
-`lib/photon.ts` provides Photon payload parsing and message sending. The webhook endpoint is:
+Photon/Spectrum is the messaging delivery layer for Zargar. Students can talk to the same tutor workflow from a Spectrum provider instead of opening the web chat.
+
+The live agent runner is:
+
+```bash
+npm run spectrum:terminal
+```
+
+Terminal is the local Spectrum provider for development. For a real messaging platform, set Photon/Spectrum credentials and run one of:
+
+```bash
+npm run spectrum:imessage
+npm run spectrum:whatsapp
+```
+
+The runner consumes Spectrum `app.messages`, maps the messaging sender to a Butterbase student in `PHOTON_DEFAULT_COURSE_ID`, runs `processStudentMessage()`, and replies through Spectrum.
+
+The webhook endpoint is also available for signed Spectrum webhook deliveries:
 
 `POST /api/photon/webhook`
 
-It parses the incoming student message, runs `processStudentMessage()`, and returns a Photon delivery response. Without `PHOTON_API_KEY`, delivery stays in local development mode.
+It verifies `X-Spectrum-Signature` when `SPECTRUM_SIGNING_SECRET` or `PHOTON_WEBHOOK_SECRET` is configured, parses `event: "messages"` payloads, and runs the same learning workflow. Webhook HTTP responses are acknowledgements; live replies should be sent by the Spectrum SDK runner because Spectrum webhooks serialize messages without live `space.send()` / `message.reply()` functions.
 
 ## Core backend flow
 

@@ -24,6 +24,12 @@ interface Db {
   learning_events: LearningEvent[];
 }
 
+export interface CourseResourceInput {
+  title: string;
+  content: string;
+  resource_type: string;
+}
+
 const dbPath = path.join(process.cwd(), ".data", "zargar.json");
 
 const initialDb: Db = {
@@ -130,7 +136,7 @@ const localButterbase = {
     return (await readDb()).courses.find((course) => course.id === courseId) ?? null;
   },
 
-  async createCourse(input: { title: string; description: string; professor_id?: string; material?: string }) {
+  async createCourse(input: { title: string; description: string; professor_id?: string; material?: string; resources?: CourseResourceInput[] }) {
     const db = await readDb();
     const course: Course = {
       id: createId("course"),
@@ -140,15 +146,9 @@ const localButterbase = {
       created_at: nowIso()
     };
     db.courses.push(course);
-    if (input.material?.trim()) {
-      db.course_resources.push({
-        id: createId("res"),
-        course_id: course.id,
-        title: `${course.title} pasted material`,
-        content: input.material.trim(),
-        resource_type: "pasted_text",
-        created_at: nowIso()
-      });
+    const resources = buildCourseResources(course, input);
+    if (resources.length) {
+      db.course_resources.push(...resources);
     }
     await writeDb(db);
     return course;
@@ -319,7 +319,7 @@ const remoteButterbase = {
     return getRow<Course>("courses", courseId);
   },
 
-  async createCourse(input: { title: string; description: string; professor_id?: string; material?: string }) {
+  async createCourse(input: { title: string; description: string; professor_id?: string; material?: string; resources?: CourseResourceInput[] }) {
     const course: Course = {
       id: createId("course"),
       professor_id: input.professor_id ?? "prof_demo",
@@ -328,16 +328,8 @@ const remoteButterbase = {
       created_at: nowIso()
     };
     const created = await createRow<Course>("courses", course);
-    if (input.material?.trim()) {
-      await createRow<CourseResource>("course_resources", {
-        id: createId("res"),
-        course_id: created.id,
-        title: `${created.title} pasted material`,
-        content: input.material.trim(),
-        resource_type: "pasted_text",
-        created_at: nowIso()
-      });
-    }
+    const resources = buildCourseResources(created, input);
+    await Promise.all(resources.map((resource) => createRow<CourseResource>("course_resources", resource)));
     return created;
   },
 
@@ -486,6 +478,39 @@ const remoteButterbase = {
   }
 };
 
+function buildCourseResources(
+  course: Course,
+  input: { material?: string; resources?: CourseResourceInput[] }
+): CourseResource[] {
+  const createdAt = nowIso();
+  const resources: CourseResource[] = [];
+
+  if (input.material?.trim()) {
+    resources.push({
+      id: createId("res"),
+      course_id: course.id,
+      title: `${course.title} pasted material`,
+      content: input.material.trim(),
+      resource_type: "pasted_text",
+      created_at: createdAt
+    });
+  }
+
+  for (const resource of input.resources ?? []) {
+    if (!resource.content.trim()) continue;
+    resources.push({
+      id: createId("res"),
+      course_id: course.id,
+      title: resource.title,
+      content: resource.content.trim(),
+      resource_type: resource.resource_type,
+      created_at: createdAt
+    });
+  }
+
+  return resources;
+}
+
 // Keep these function signatures stable so app routes and the agent flow do not change.
 export const butterbase = {
   async listCourses() {
@@ -496,7 +521,7 @@ export const butterbase = {
     return useRemoteButterbase() ? remoteButterbase.getCourse(courseId) : localButterbase.getCourse(courseId);
   },
 
-  async createCourse(input: { title: string; description: string; professor_id?: string; material?: string }) {
+  async createCourse(input: { title: string; description: string; professor_id?: string; material?: string; resources?: CourseResourceInput[] }) {
     return useRemoteButterbase() ? remoteButterbase.createCourse(input) : localButterbase.createCourse(input);
   },
 

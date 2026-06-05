@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { butterbase } from "@/lib/butterbase";
 import { ChatClient } from "./ChatClient";
@@ -26,11 +27,16 @@ export default async function ChatPage({ params }: { params: Promise<{ courseId:
             &nbsp;&middot;&nbsp;Responses are grounded in your course materials
           </p>
         </div>
-        {learningState && (
-          <span className={`pill ${learningState.status}`} style={{ fontSize: 13, padding: "5px 14px", flexShrink: 0 }}>
-            {learningState.status.replace("_", " ")}
-          </span>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          {learningState && (
+            <span className={`pill ${learningState.status}`} style={{ fontSize: 13, padding: "5px 14px" }}>
+              {learningState.status.replace("_", " ")}
+            </span>
+          )}
+          <Link className="button button-secondary" href={`/student/${studentId}`}>
+            Student dashboard
+          </Link>
+        </div>
       </div>
 
       <ChatClient

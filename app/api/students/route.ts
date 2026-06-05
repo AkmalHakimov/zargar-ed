@@ -8,6 +8,5 @@ export async function POST(request: Request) {
     name: body.name,
     email: body.email
   });
-  return NextResponse.json({ student, chatUrl: `/chat/${student.course_id}/${student.id}` }, { status: 201 });
+  return NextResponse.json({ student, chatUrl: `/student/${student.id}` }, { status: 201 });
 }
-
